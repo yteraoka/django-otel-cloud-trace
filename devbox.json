@@ -1,7 +1,9 @@
 {
   "packages": [
     "python311",
-    "postgresql_14"
+    "postgresql_14",
+    "llvm",
+    "openssl"
   ],
   "shell": {
     "init_hook": null
