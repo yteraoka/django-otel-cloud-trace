@@ -3,10 +3,14 @@
     "python311",
     "postgresql_14",
     "llvm",
-    "openssl"
+    "openssl",
+    "poetry"
   ],
   "shell": {
-    "init_hook": null
+    "init_hook": [
+      "echo \"Setting flags to allow Python C extension compilation\"",
+      "export NIX_CFLAGS_COMPILE=\"$NIX_CFLAGS_COMPILE $(cat $(dirname $(which clang))/../nix-support/libcxx-cxxflags)\""
+    ]
   },
   "nixpkgs": {
     "commit": "f80ac848e3d6f0c12c52758c0f25c10c97ca3b62"
