@@ -770,6 +770,23 @@ opentelemetry-util-http = "0.37b0"
 test = ["opentelemetry-test-utils (==0.37b0)"]
 
 [[package]]
+name = "opentelemetry-resourcedetector-gcp"
+version = "1.4.0a0"
+description = "Google Cloud resource detector for OpenTelemetry"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "opentelemetry-resourcedetector-gcp-1.4.0a0.tar.gz", hash = "sha256:0985be7e1132658b3f9593d08d75de6cec6b6d2e1794b8dd2a34651359d6a77d"},
+    {file = "opentelemetry_resourcedetector_gcp-1.4.0a0-py3-none-any.whl", hash = "sha256:a9aa26a33a55878c8c1e355b0cc96ea7b90b00b2e660ef7528ae43e9f636d964"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.0,<2.0"
+opentelemetry-sdk = ">=1.0,<2.0"
+requests = ">=2.24,<3.0"
+
+[[package]]
 name = "opentelemetry-sdk"
 version = "1.16.0"
 description = "OpenTelemetry Python SDK"
@@ -1300,4 +1317,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "34d00cba4a0932c4fa2782718dd020401e4256c5780faf73f40bac93c19fc4e7"
+content-hash = "d8950fb15c3fd655b94a0d292402fcf27efdda2408eaee6c5d1aee3fe932314b"
