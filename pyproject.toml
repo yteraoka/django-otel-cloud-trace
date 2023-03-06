@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "django-otel-cloud-trace"
+version = "0.1.0"
+description = ""
+authors = ["Yoshinori Teraoka <teraoka@3-shake.com>"]
+readme = "README.md"
+packages = [{include = "django_otel_cloud_trace"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+django = "^4.1.7"
+opentelemetry-instrumentation-django = "^0.37b0"
+opentelemetry-exporter-gcp-trace = "^1.4.0"
+psycopg2 = "^2.9.5"
+opentelemetry-instrumentation-psycopg2 = "^0.37b0"
+opentelemetry-instrumentation-requests = "^0.37b0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
