@@ -1,6 +1,6 @@
 {
   "packages": [
-    "python311",
+    "python310",
     "postgresql_14",
     "llvm",
     "openssl",
