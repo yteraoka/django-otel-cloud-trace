@@ -15,6 +15,7 @@ psycopg2 = "^2.9.5"
 opentelemetry-instrumentation-psycopg2 = "^0.37b0"
 opentelemetry-instrumentation-requests = "^0.37b0"
 daphne = "^4.0.0"
+opentelemetry-resourcedetector-gcp = "^1.4.0a0"
 
 
 [build-system]
