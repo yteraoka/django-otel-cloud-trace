@@ -159,3 +159,11 @@ https://signoz.io/docs/instrumentation/django/#postgres-database-instrumentation
 > psycopg2-binary is not supported by opentelemetry auto instrumentation
 > libraries as it is not recommended for production use.
 > Please use psycopg2 to see DB calls also in your trace data in SigNoz
+
+
+
+## daphne を使って実行
+
+```
+poetry run python -m daphne -b 0.0.0.0 -p 8000 mysite.asgi:application
+```
