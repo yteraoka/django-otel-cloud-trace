@@ -9,6 +9,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
 from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
 # Import instrumentation packages here
 
@@ -43,3 +44,4 @@ def response_hook(span, request, response):
 def add_instrumentation():
     DjangoInstrumentor().instrument(is_sql_commentor_enabled=True, response_hook=response_hook)
     Psycopg2Instrumentor().instrument(enable_commenter=True, commenter_options={})
+    RequestsInstrumentor().instrument()
