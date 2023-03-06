@@ -7,6 +7,9 @@ import opentelemetry_config
 
 def main():
     """Run administrative tasks."""
+
+    # DjangoInstrumentor uses DJANGO_SETTINGS_MODULE to instrument the project.
+    # Make sure the var is available before you call the DjangoInstrumentor.
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
 
     opentelemetry_config.add_instrumentation()
