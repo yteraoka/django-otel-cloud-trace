@@ -28,9 +28,11 @@ def add_instrumentation():
         resources.ResourceAttributes.WEBENGINE_VERSION: django.__version__,
     }
     if os.getenv('K_SERVICE') is not None:
-        attrs[resources.SERVICE_NAME] = os.getenv('K_SERVICE')
+        attrs["faas.name"] = os.getenv('K_SERVICE')
+        attrs["cloud.platform"] = "gcp_cloud_run"
+        attrs["gcp.resource_type"] = "cloud_run"
     if os.getenv('K_REVISION') is not None:
-        attrs[resources.SERVICE_VERSION] = os.getenv('K_REVISION')
+        attrs["faas.version"] = os.getenv('K_REVISION')
 
     resource = resources.Resource(attributes=attrs)
 
