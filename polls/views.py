@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views import generic
 import requests
+import time
 
 from .models import Choice, Question
 
@@ -12,7 +13,7 @@ class IndexView(generic.ListView):
 
     def get_queryset(self):
         # test
-        r = requests.get('https://httpbin.org/headers', timeout=(1.0, 1.0))
+        r = requests.get('https://httpbin.org/delay/2', timeout=(1.0, 5.0))
 
         """Return the last five published questions."""
         return Question.objects.order_by('-pub_date')[:5]
@@ -30,6 +31,7 @@ class ResultsView(generic.DetailView):
 
 def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
+    time.sleep(1)
     try:
         selected_choice = question.choice_set.get(pk=request.POST['choice'])
     except (KeyError, Choice.DoesNotExist):
