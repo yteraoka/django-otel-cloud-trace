@@ -23,10 +23,11 @@ def add_instrumentation():
         resources.PROCESS_RUNTIME_NAME: sys.implementation.name,
         resources.PROCESS_RUNTIME_VERSION: '.'.join(map(str, sys.implementation.version)),
         resources.PROCESS_RUNTIME_DESCRIPTION: sys.version,
-        resources.PROCESS_COMMAND_ARGS: sys.argv,
+        #resources.PROCESS_COMMAND_ARGS: sys.argv,
         resources.ResourceAttributes.WEBENGINE_NAME: "django",
         resources.ResourceAttributes.WEBENGINE_VERSION: django.__version__,
     }
+
     if os.getenv('K_SERVICE') is not None:
         attrs["faas.name"] = os.getenv('K_SERVICE')
         attrs["cloud.platform"] = "gcp_cloud_run"
@@ -35,6 +36,14 @@ def add_instrumentation():
         attrs["faas.version"] = os.getenv('K_REVISION')
 
     resource = resources.Resource(attributes=attrs)
+
+    # on Cloud Run (or Cloud Functions)
+    if os.getenv('K_SERVICE') is not None:
+        from opentelemetry.sdk.resources import get_aggregated_resources
+        from opentelemetry.resourcedetector.gcp_resource_detector import GoogleCloudResourceDetector
+        resource = resource.merge(get_aggregated_resources(
+            [GoogleCloudResourceDetector(raise_on_error=True)]
+        ))
 
     trace_provider = TracerProvider(resource=resource)
     trace.set_tracer_provider(trace_provider)
