@@ -13,7 +13,7 @@ from django.core.asgi import get_asgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
 
-if os.getenv('TRACE_ENABLED') is not None or os.getenv('CLOUD_TRACED_ENABLED') is not None:
+if os.getenv('TRACE_ENABLED') is not None or os.getenv('CLOUD_TRACE_ENABLED') is not None:
     import mysite.opentelemetry_config
     mysite.opentelemetry_config.add_instrumentation()
 
