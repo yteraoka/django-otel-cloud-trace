@@ -1,22 +1,47 @@
-# Django tutorial
+# Django tutorial app に OpenTelemetry の Tracing を導入する
 
 https://docs.djangoproject.com/en/4.1/intro/
 
-[devbox](https://www.jetpack.io/devbox/docs/) の Python 3.11, PostgreSQL を使っている
+[devbox](https://www.jetpack.io/devbox/docs/) の Python 3.10, PostgreSQL を使っている。
 
-direnv が使えるようになっていない場合は `devbox shell` を実行することで必要な環境変数がセットされる
+Cloud Run で実行し、Cloud Trace に送ることを前提としている。
+
+
+## Devbox
+
+開発には devbox を使用しているため、[devbox.json](./devbox.json) が配置してある。
+
+[devbox](https://www.jetpack.io/devbox/) を install して `devbox shell` を実行することで python や poetry, PostgreSQL が使えるようになる。 (`direnv` 連携はしていない)
+devbox shell から抜ける場合は exit か Ctrl-D.
+
+```bash
+devbox shell
+```
 
 PostgreSQL を起動させるには次のコマンドを実行する
 
-```
+```bash
 devbox services start
 ```
 
-PostgreSQL サーバーの情報は `~/.pg_service.conf` (`PGSERVICEFILE`) を使用している
-パスワードを設定する場合は `~/.pgpass` (`PGPASSFILE`) に書く
+Django で PostgreSQL サーバーの情報設定に `~/.pg_service.conf` (`PGSERVICEFILE`) を使用する場合は
 
+settings.py で次のように指定して
+
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'OPTIONS': {
+            'service': 'my_service',
+        }
+    }
+}
 ```
-$ cat ~/.pg_service.conf
+
+`~/.pg_service.conf` に次のように指定する
+
+```ini
 [my_service]
 host=/Users/teraoka/work/django-otel-cloud-trace/.devbox/virtenv/postgresql_14
 user=teraoka
@@ -24,135 +49,17 @@ dbname=mysite
 port=5432
 ```
 
+パスワードを設定する場合は `~/.pgpass` (`PGPASSFILE`) に書く
+
 Unix Domain Socket の path の最大長が 103 bytes なので気をつける必要がある
 
 ```
 LOG:  Unix-domain socket path "/Users/teraoka/ghq/github.com/yteraoka/django-otel-cloud-trace/.devbox/virtenv/postgresql_14/.s.PGSQL.5432" is too long (maximum 103 bytes)
 ```
 
-- https://pypi.org/project/opentelemetry-exporter-gcp-monitoring/
-- https://pypi.org/project/opentelemetry-exporter-gcp-trace/
-- https://pypi.org/project/opentelemetry-instrumentation-django/
-- https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/django/django.html
+### psycopg2-binary はダメらしい
 
-```
-pip install opentelemetry-sdk
-pip install opentelemetry-instrumentation-django
-pip install opentelemetry-exporter-gcp-trace
-pip install opentelemetry-distro
-```
-
-して `manage.py` に追記する
-
-```diff
-diff --git a/mysite/manage.py b/mysite/manage.py
-index a7da667..65fe5cb 100755
---- a/mysite/manage.py
-+++ b/mysite/manage.py
-@@ -3,10 +3,16 @@
- import os
- import sys
-
-+from opentelemetry.instrumentation.django import DjangoInstrumentor
-+
-
- def main():
-     """Run administrative tasks."""
-     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
-+
-+    # This call is what makes the Django application be instrumented
-+    DjangoInstrumentor().instrument()
-+
-     try:
-         from django.core.management import execute_from_command_line
-     except ImportError as exc:
-```
-
-```
-../venv/bin/opentelemetry-bootstrap -a install
-```
-
-を実行したら沢山 package がインストールされた
-
-```diff
-diff --git a/requirements.txt b/requirements.txt
-index c92bece..518b1d1 100644
---- a/requirements.txt
-+++ b/requirements.txt
-@@ -1,4 +1,44 @@
- asgiref==3.6.0
-+cachetools==5.3.0
-+certifi==2022.12.7
-+charset-normalizer==3.0.1
-+Deprecated==1.2.13
- Django==4.1.7
-+google-api-core==2.11.0
-+google-auth==2.16.1
-+google-cloud-trace==1.10.0
-+googleapis-common-protos==1.58.0
-+grpcio==1.51.3
-+grpcio-status==1.51.3
-+idna==3.4
-+opentelemetry-api==1.16.0
-+opentelemetry-distro==0.37b0
-+opentelemetry-exporter-gcp-trace==1.4.0
-+opentelemetry-instrumentation==0.37b0
-+opentelemetry-instrumentation-asgi==0.37b0
-+opentelemetry-instrumentation-aws-lambda==0.37b0
-+opentelemetry-instrumentation-dbapi==0.37b0
-+opentelemetry-instrumentation-django==0.37b0
-+opentelemetry-instrumentation-grpc==0.37b0
-+opentelemetry-instrumentation-logging==0.37b0
-+opentelemetry-instrumentation-requests==0.37b0
-+opentelemetry-instrumentation-sqlite3==0.37b0
-+opentelemetry-instrumentation-urllib==0.37b0
-+opentelemetry-instrumentation-urllib3==0.37b0
-+opentelemetry-instrumentation-wsgi==0.37b0
-+opentelemetry-propagator-aws-xray==1.0.1
-+opentelemetry-sdk==1.16.0
-+opentelemetry-semantic-conventions==0.37b0
-+opentelemetry-util-http==0.37b0
-+proto-plus==1.22.2
-+protobuf==4.22.0
- psycopg2-binary==2.9.5
-+pyasn1==0.4.8
-+pyasn1-modules==0.2.8
-+requests==2.28.2
-+rsa==4.9
-+six==1.16.0
- sqlparse==0.4.3
-+typing_extensions==4.5.0
-+urllib3==1.26.14
-+wrapt==1.15.0
-```
-
-xray とか aws-lambda は不要そうだな
-
-Django が main を2度読み込むのを防ぐために runserver に `--noreload` をつける必要がある
-
-```
-python manage.py runserver --noreload
-```
-
-ということでこうすれば良いのか？
-
-```
-opentelemetry-instrument --traces_exporter gcp_trace \
-  --exporter_gcp_trace_project_id ${GOOGLE_PROJECT_ID} \
-  python manage.py runserver --noreload
-```
-
-これはうまくいかなくて、 `mysite/opentelemetry_config.py` を設置して
-
-```
-python manage.py runserver --noreload
-```
-
-で起動させた。
-
-不要 package を削っていく
-
-psycopg2-binary はダメらしい
+devbox 環境でも psycopg2 のインストールは問題ないので psycopg2 を使用する
 
 https://signoz.io/docs/instrumentation/django/#postgres-database-instrumentation
 
@@ -161,9 +68,42 @@ https://signoz.io/docs/instrumentation/django/#postgres-database-instrumentation
 > Please use psycopg2 to see DB calls also in your trace data in SigNoz
 
 
+## Poetry
+
+package 管理には [poetry](https://python-poetry.org/) を使用している。poetry 自体は devbox でインストールしている。
+
+`poetry config virtualenvs.in-project true` で project の directory 内に .venv を作るようにしている。
+
 
 ## daphne を使って実行
+
+事情により daphne が使用されているので
 
 ```
 poetry run python -m daphne -b 0.0.0.0 -p 8000 mysite.asgi:application
 ```
+
+asgi なので [opentelemetry-instrumentation-asgi](https://pypi.org/project/opentelemetry-instrumentation-asgi/) が必要。
+
+[OpenTelemetry ASGI Instrumentation](https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/asgi/asgi.html)
+おや？ OpenTelemetryMiddleware という便利なものがあったのか。TODO
+
+
+## 参考情報
+
+- https://opentelemetry.io/
+- https://github.com/GoogleCloudPlatform/opentelemetry-operations-python
+- https://google-cloud-opentelemetry.readthedocs.io/en/latest/index.html
+- https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/django/django.html
+- https://github.com/GoogleCloudPlatform/opentelemetry-operator-sample
+- https://signoz.io/docs/instrumentation/django/
+- https://cloud.google.com/run/docs/container-contract
+- [OpenTelemetryでWebシステムの処理を追跡しよう - DjangoCongress JP 2022](https://www.slideshare.net/shimizukawa/lets-trace-web-system-processes-with-opentelemetry-djangocongress-jp-2022) (slideshare)
+- https://github.com/shimizukawa/try-otel/blob/20221112-djangocongressjp2022/backend/config/otel.py
+
+[Cloud Trace Exporter Example](https://google-cloud-opentelemetry.readthedocs.io/en/latest/examples/cloud_trace_exporter/README.html) は import の指定が間違っているような気がする。
+
+
+## TODO
+
+- terraform
