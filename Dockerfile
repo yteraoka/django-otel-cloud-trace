@@ -23,7 +23,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VE
  && $POETRY_HOME/bin/poetry install --only main --no-root --no-interaction --no-ansi
 
 
-FROM python:3.10.9-slim
+FROM python:3.10.10-slim
 
 RUN apt-get update \
  && apt-get upgrade -y \
