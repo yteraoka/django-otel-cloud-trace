@@ -1,0 +1,63 @@
+name: Build container image
+
+on:
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint Dockerfile with hadolint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
+          verbose: true
+
+  build:
+    name: Build container image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # metadata-action の動作確認
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/yteraoka/django-otel-cloud-trace
+          tags: |
+            type=semver,pattern={{version}},priority=1200
+            type=ref,event=tag
+            type=ref,event=pr
+            type=sha,priority=1000
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build only
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          push: false
+          tags: django-otel-cloud-trace:dev
+
+      - name: Dockle
+        uses: erzz/dockle-action@v1
+        with:
+          image: jenkins-plus:dev
+          exit-code: '1'
+          failure-threshold: fatal
+
+      - name: Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: django-otel-cloud-trace:dev
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
