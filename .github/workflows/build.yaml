@@ -48,7 +48,7 @@ jobs:
       - name: Dockle
         uses: erzz/dockle-action@v1
         with:
-          image: jenkins-plus:dev
+          image: django-otel-cloud-trace:dev
           exit-code: '1'
           failure-threshold: fatal
 
