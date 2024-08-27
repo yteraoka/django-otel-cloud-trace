@@ -795,14 +795,14 @@ test = ["opentelemetry-test-utils (==0.37b0)"]
 
 [[package]]
 name = "opentelemetry-propagator-gcp"
-version = "1.5.0"
+version = "1.7.0"
 description = "Google Cloud propagator for OpenTelemetry"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "opentelemetry-propagator-gcp-1.5.0.tar.gz", hash = "sha256:a9bb95e4eced1587bd52a0997de46ce741a55ce49bd217ce167d984e30f11164"},
-    {file = "opentelemetry_propagator_gcp-1.5.0-py3-none-any.whl", hash = "sha256:dc35ec00ace48b444d7e0dcd06b5f23807214db5edb700ebae0e3139b644a070"},
+    {file = "opentelemetry_propagator_gcp-1.7.0-py3-none-any.whl", hash = "sha256:49e338b41c53b98f0d74402d103656271f17cabed15793b88387a0b43c4a3518"},
+    {file = "opentelemetry_propagator_gcp-1.7.0.tar.gz", hash = "sha256:c4e5ffd4bce5f71702edbeefd3243e8ad10040a59b9d83c0246c603b578a4020"},
 ]
 
 [package.dependencies]
