@@ -628,14 +628,14 @@ setuptools = ">=16.0"
 
 [[package]]
 name = "opentelemetry-exporter-gcp-trace"
-version = "1.5.0"
+version = "1.7.0"
 description = "Google Cloud Trace exporter for OpenTelemetry"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "opentelemetry-exporter-gcp-trace-1.5.0.tar.gz", hash = "sha256:7ab070fac6331551dee80cd5e89c1a098096a8c7e19f78bee8f3b6b90e96d470"},
-    {file = "opentelemetry_exporter_gcp_trace-1.5.0-py3-none-any.whl", hash = "sha256:bb34b568379dd8333279fdc8aff9b3e79c9cd5a039a7ebe712e81b6fa02350f0"},
+    {file = "opentelemetry_exporter_gcp_trace-1.7.0-py3-none-any.whl", hash = "sha256:6fd66256a0a7feb3d87334ec7981f2a477c63cb6d7696b1bc603f105293b06db"},
+    {file = "opentelemetry_exporter_gcp_trace-1.7.0.tar.gz", hash = "sha256:2752dacdd3fdbfd73079d5ac58fc68179758e76535690d479de2bfbe03646583"},
 ]
 
 [package.dependencies]
