@@ -3,7 +3,7 @@
     "python@3.13",
     "postgresql@16",
     "llvm@latest",
-    "openssl@latest",
+    "openssl@3.6.0",
     "poetry@2.4.1"
   ],
   "shell": {
