@@ -1,0 +1,4 @@
+# python:*-slim の base image が apt-get のあとに `apt-get dist-clean` を使うようになり、
+# dockle が「apt-get の cache を消していない」と誤検知するため無視する。
+# (このリポジトリの Dockerfile では rm -rf /var/lib/apt/lists を実行している)
+DKL-DI-0005

@@ -51,6 +51,8 @@ jobs:
           image: django-otel-cloud-trace:dev
           exit-code: '1'
           failure-threshold: fatal
+          # settings.py は credential を格納する file ではないので credential check から除外する
+          accept-filenames: settings.py
 
       - name: Trivy
         uses: aquasecurity/trivy-action@master
