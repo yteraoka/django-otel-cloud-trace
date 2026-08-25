@@ -37,7 +37,7 @@ addopts = "--strict-markers"
 
 [tool.coverage.run]
 source = ["mysite", "polls"]
-omit = ["*/migrations/*", "*/tests/*", "*/tests.py", "mysite/settings_test.py"]
+omit = ["*/migrations/*", "*/tests/*", "*/tests.py", "*/test_*.py", "mysite/settings_test.py"]
 
 [tool.ruff]
 line-length = 100

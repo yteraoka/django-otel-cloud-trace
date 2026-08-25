@@ -133,6 +133,22 @@ DB server を用意しなくても test が実行できるようにするため�
 外部への HTTP request (`https://httpbin.org/delay/2`) や `time.sleep()` は trace を分かりやすく
 するために view に入れてあるものなので、test では mock している。
 
+### OpenTelemetry の動作確認
+
+[mysite/test_instrumentation.py](./mysite/test_instrumentation.py) では実際に
+`add_instrumentation()` を実行し、`InMemorySpanExporter` で span を集めて次のことを確認している。
+
+- Django への request で SERVER span が作られ、name (`GET polls/<int:pk>/`) や
+  http 系の attribute、`response_hook` が付ける `http.get.params` が入っていること
+- view からの外部 HTTP request が CLIENT span になり、SERVER span の子として
+  同じ trace に入ること (`requests` の instrumentation)
+- 外部への request に trace context (`traceparent`) が付いていること
+- Cloud Trace の propagator を使ったときに `X-Cloud-Trace-Context` header の
+  trace id を引き継ぐこと
+
+network や Cloud Trace への送信は行わない。`requests` は instrumentation より下の層
+(`HTTPAdapter.send`) で差し替えているので、client span は production と同じように作られる。
+
 
 ## Lint, Format
 
