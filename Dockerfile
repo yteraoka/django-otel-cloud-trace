@@ -27,11 +27,15 @@ RUN uv sync --locked --no-dev
 
 FROM python:3.14.7-slim
 
+# application は /code/.venv から実行するので pip は不要。
+# pip が vendoring している library (msgpack, setuptools) の脆弱性が
+# image scan で報告されるため削除しておく。
 RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends libpq-dev \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* \
+ && python -m pip uninstall --yes pip \
  && useradd --gid users --uid 1001 --create-home app
 
 USER app

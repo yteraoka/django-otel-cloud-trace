@@ -63,3 +63,5 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+          # .trivyignore と違い .trivyignore.yaml は自動では読まれない
+          trivyignores: .trivyignore.yaml
