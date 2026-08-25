@@ -1,4 +1,4 @@
-FROM python:3.11.4 as builder
+FROM python:3.13.15 AS builder
 
 RUN apt-get update \
  && apt-get upgrade -y \
@@ -11,7 +11,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
 ENV POETRY_HOME /etc/poetry
-ENV POETRY_VERSION 1.3.2
+ENV POETRY_VERSION 2.4.1
 
 WORKDIR /code
 
@@ -23,7 +23,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VE
  && $POETRY_HOME/bin/poetry install --only main --no-root --no-interaction --no-ansi
 
 
-FROM python:3.11.4-slim
+FROM python:3.13.15-slim
 
 RUN apt-get update \
  && apt-get upgrade -y \

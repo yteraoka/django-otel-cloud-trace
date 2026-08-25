@@ -1,25 +1,62 @@
-[tool.poetry]
+[project]
 name = "django-otel-cloud-trace"
 version = "0.1.0"
-description = ""
-authors = ["Yoshinori Teraoka <teraoka@3-shake.com>"]
+description = "Django tutorial app instrumented with OpenTelemetry for Cloud Trace"
+authors = [{ name = "Yoshinori Teraoka", email = "teraoka@3-shake.com" }]
 readme = "README.md"
-packages = [{include = "django_otel_cloud_trace"}]
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "django (>=6.1,<7.0)",
+    "opentelemetry-instrumentation-django (>=0.65b0,<0.66)",
+    "opentelemetry-exporter-gcp-trace (>=1.15.0,<2.0.0)",
+    "psycopg2 (>=2.9.12,<3.0.0)",
+    "requests (>=2.34.2,<3.0.0)",
+    "opentelemetry-instrumentation-psycopg2 (>=0.65b0,<0.66)",
+    "opentelemetry-instrumentation-requests (>=0.65b0,<0.66)",
+    "daphne (>=4.2.3,<5.0.0)",
+    "opentelemetry-propagator-gcp (>=1.15.0,<2.0.0)",
+    "opentelemetry-instrumentation-asgi (>=0.65b0,<0.66)",
+    "opentelemetry-resourcedetector-gcp (>=1.14.0,<2.0.0)",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-django = "^4.1.7"
-opentelemetry-instrumentation-django = "^0.37b0"
-opentelemetry-exporter-gcp-trace = "^1.4.0"
-psycopg2 = "^2.9.5"
-opentelemetry-instrumentation-psycopg2 = "^0.37b0"
-opentelemetry-instrumentation-requests = "^0.37b0"
-daphne = "^4.0.0"
-opentelemetry-propagator-gcp = "^1.4.0"
-opentelemetry-instrumentation-asgi = "^0.37b0"
-opentelemetry-resourcedetector-gcp = "^1.4.0a0"
+[tool.poetry]
+# This project is an application, not a library: nothing is built or installed
+# from the project directory itself.
+package-mode = false
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.1.1"
+pytest-django = "^4.14.0"
+pytest-cov = "^7.1.0"
+ruff = "^0.16.4"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "mysite.settings_test"
+python_files = ["test_*.py", "tests.py"]
+addopts = "--strict-markers"
+
+[tool.coverage.run]
+source = ["mysite", "polls"]
+omit = ["*/migrations/*", "*/tests/*", "*/tests.py", "mysite/settings_test.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["polls/migrations"]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "UP",  # pyupgrade
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "DJ",  # flake8-django
+  "SIM", # flake8-simplify
+  "RUF", # ruff specific rules
+]
+
+[tool.ruff.lint.per-file-ignores]
+"mysite/settings_test.py" = ["F403", "F405"]

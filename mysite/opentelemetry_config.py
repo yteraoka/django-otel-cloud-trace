@@ -1,18 +1,17 @@
+import json
 import os
 import sys
-import json
+
 import django
 
+
 def response_hook(span, request, response):
-    span.set_attribute(
-      "http.get.params",
-      json.dumps(request.GET)
-    )
-    #span.set_attribute(
+    span.set_attribute("http.get.params", json.dumps(request.GET))
+    # span.set_attribute(
     #  "http.post.params",
     #  json.dumps(request.POST)
-    #)
-    pass
+    # )
+
 
 def add_instrumentation():
     from opentelemetry import trace
@@ -21,9 +20,9 @@ def add_instrumentation():
 
     attrs = {
         resources.PROCESS_RUNTIME_NAME: sys.implementation.name,
-        resources.PROCESS_RUNTIME_VERSION: '.'.join(map(str, sys.implementation.version)),
+        resources.PROCESS_RUNTIME_VERSION: ".".join(map(str, sys.implementation.version)),
         resources.PROCESS_RUNTIME_DESCRIPTION: sys.version,
-        #resources.PROCESS_COMMAND_ARGS: sys.argv,
+        # resources.PROCESS_COMMAND_ARGS: sys.argv,
         resources.ResourceAttributes.WEBENGINE_NAME: "django",
         resources.ResourceAttributes.WEBENGINE_VERSION: django.__version__,
     }
@@ -31,38 +30,40 @@ def add_instrumentation():
     resource = resources.Resource(attributes=attrs)
 
     # on Cloud Run (or Cloud Functions)
-    if os.getenv('K_SERVICE') is not None:
-        from opentelemetry.sdk.resources import get_aggregated_resources
+    if os.getenv("K_SERVICE") is not None:
         from opentelemetry.resourcedetector.gcp_resource_detector import GoogleCloudResourceDetector
-        resource = resource.merge(get_aggregated_resources(
-            [GoogleCloudResourceDetector(raise_on_error=True)]
-        ))
+        from opentelemetry.sdk.resources import get_aggregated_resources
+
+        resource = resource.merge(
+            get_aggregated_resources([GoogleCloudResourceDetector(raise_on_error=True)])
+        )
 
     trace_provider = TracerProvider(resource=resource)
     trace.set_tracer_provider(trace_provider)
 
-    if os.getenv('CLOUD_TRACE_ENABLED') is not None:
-        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    if os.getenv("CLOUD_TRACE_ENABLED") is not None:
         from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+        from opentelemetry.propagate import set_global_textmap
         from opentelemetry.propagators.cloud_trace_propagator import (
             CloudTraceFormatPropagator,
         )
-        from opentelemetry.propagate import set_global_textmap
-        trace_provider.add_span_processor(
-            BatchSpanProcessor(CloudTraceSpanExporter())
-        )
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+        trace_provider.add_span_processor(BatchSpanProcessor(CloudTraceSpanExporter()))
         set_global_textmap(CloudTraceFormatPropagator())
-    elif os.getenv('TRACE_ENABLED') is not None:
-        from opentelemetry.sdk.trace.export import SimpleSpanProcessor, ConsoleSpanExporter
-        trace_provider.add_span_processor(
-            SimpleSpanProcessor(ConsoleSpanExporter())
-        )
+    elif os.getenv("TRACE_ENABLED") is not None:
+        from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
+
+        trace_provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
 
     from opentelemetry.instrumentation.django import DjangoInstrumentor
+
     DjangoInstrumentor().instrument(is_sql_commentor_enabled=True, response_hook=response_hook)
 
     from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+
     Psycopg2Instrumentor().instrument(enable_commenter=True, commenter_options={})
 
     from opentelemetry.instrumentation.requests import RequestsInstrumentor
+
     RequestsInstrumentor().instrument()
