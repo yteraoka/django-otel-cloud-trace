@@ -7,7 +7,7 @@ on:
   pull_request:
 
 env:
-  POETRY_VERSION: 2.4.1
+  UV_VERSION: 0.12.5
 
 jobs:
   lint:
@@ -16,53 +16,47 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-
-      - uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.0.1
         with:
-          python-version: '3.13'
-          cache: poetry
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
 
+      # ruff only needs the dev group, so the main dependencies (psycopg2 needs
+      # to be compiled) are not installed here
       - name: Install dev dependencies
-        run: poetry install --only dev --no-interaction --no-ansi
+        run: uv sync --locked --only-dev
 
       - name: ruff check
-        run: poetry run ruff check --output-format=github .
+        run: uv run --no-sync ruff check --output-format=github .
 
       - name: ruff format --check
-        run: poetry run ruff format --check --diff .
+        run: uv run --no-sync ruff format --check --diff .
 
   test:
-    name: Test (Python ${{ matrix.python-version }})
+    name: Test
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
 
       - name: Install libpq (required to build psycopg2)
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpq-dev
 
-      - name: Install poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-
-      - uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.0.1
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: poetry
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-ansi
+        run: uv sync --locked
 
       - name: Django checks
         env:
           DJANGO_SETTINGS_MODULE: mysite.settings_test
         run: |
-          poetry run python manage.py check
-          poetry run python manage.py makemigrations --check --dry-run
+          uv run --no-sync python manage.py check
+          uv run --no-sync python manage.py makemigrations --check --dry-run
 
       - name: pytest
-        run: poetry run pytest --cov --cov-report=term-missing
+        run: uv run --no-sync pytest --cov --cov-report=term-missing

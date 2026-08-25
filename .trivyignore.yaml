@@ -1,0 +1,7 @@
+secrets:
+  # daphne が依存する autobahn の docstring に含まれる sample の秘密鍵。
+  # 実際の credential ではなく、library の file なので image から取り除くこともできない。
+  - id: private-key
+    paths:
+      - "**/autobahn/wamp/cryptosign.py"
+    statement: "Sample key in the docstring of autobahn.wamp.cryptosign, not a real credential"
