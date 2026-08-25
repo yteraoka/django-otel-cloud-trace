@@ -2,35 +2,28 @@
 
 https://docs.djangoproject.com/en/6.1/intro/
 
-[devbox](https://www.jetpack.io/devbox/docs/) の Python 3.13, PostgreSQL を使っている。
+Python 3.14 と package の管理には [uv](https://docs.astral.sh/uv/) を使用している。
 
 Cloud Run で実行し、Cloud Trace に送ることを前提としている。
 
 
-## Devbox
+## PostgreSQL
 
-開発には devbox を使用しているため、[devbox.json](./devbox.json) が配置してある。
-
-[devbox](https://www.jetpack.io/devbox/) を install して `devbox shell` を実行することで python や poetry, PostgreSQL が使えるようになる。 (`direnv` 連携はしていない)
-devbox shell から抜ける場合は exit か Ctrl-D.
+以前は devbox で PostgreSQL を起動していたが、devbox の使用をやめたため各自で用意する。
+container で起動する場合は例えば次のようにする。
 
 ```bash
-devbox shell
+docker run --rm -d --name mysite-db \
+  -e POSTGRES_PASSWORD=postgres \
+  -p 5432:5432 \
+  postgres:16
 ```
 
-PostgreSQL を起動させるには次のコマンドを実行する
+[mysite/settings.py](./mysite/settings.py) は `DB_HOST`, `DB_PASSWORD` の環境変数を見るので
 
 ```bash
-devbox services start
-```
-
-よく使う操作は devbox script にしてあるので `devbox run <script>` でも実行できる。
-
-```bash
-devbox run install  # poetry install
-devbox run test     # pytest
-devbox run lint     # ruff check
-devbox run format   # ruff format
+export DB_HOST=127.0.0.1
+export DB_PASSWORD=postgres
 ```
 
 Django で PostgreSQL サーバーの情報設定に `~/.pg_service.conf` (`PGSERVICEFILE`) を使用する場合は
@@ -52,7 +45,7 @@ DATABASES = {
 
 ```ini
 [my_service]
-host=/Users/teraoka/work/django-otel-cloud-trace/.devbox/virtenv/postgresql_14
+host=127.0.0.1
 user=teraoka
 dbname=mysite
 port=5432
@@ -60,15 +53,16 @@ port=5432
 
 パスワードを設定する場合は `~/.pgpass` (`PGPASSFILE`) に書く
 
-Unix Domain Socket の path の最大長が 103 bytes なので気をつける必要がある
+Unix Domain Socket を使う場合は path の最大長が 103 bytes であることに気をつける必要がある
 
 ```
-LOG:  Unix-domain socket path "/Users/teraoka/ghq/github.com/yteraoka/django-otel-cloud-trace/.devbox/virtenv/postgresql_14/.s.PGSQL.5432" is too long (maximum 103 bytes)
+LOG:  Unix-domain socket path "/very/long/path/to/the/socket/directory/.s.PGSQL.5432" is too long (maximum 103 bytes)
 ```
 
 ### psycopg2-binary はダメらしい
 
-devbox 環境でも psycopg2 のインストールは問題ないので psycopg2 を使用する
+psycopg2 は source から build されるため libpq の header (Debian/Ubuntu では `libpq-dev`) が必要になるが、
+psycopg2-binary ではなく psycopg2 を使用する
 
 https://signoz.io/docs/instrumentation/django/#postgres-database-instrumentation
 
@@ -77,20 +71,37 @@ https://signoz.io/docs/instrumentation/django/#postgres-database-instrumentation
 > Please use psycopg2 to see DB calls also in your trace data in SigNoz
 
 
-## Poetry
+## uv
 
-package 管理には [poetry](https://python-poetry.org/) を使用している。poetry 自体は devbox でインストールしている。
+Python 本体と package 管理には [uv](https://docs.astral.sh/uv/) を使用している。
+uv 自体の install 方法は [公式 document](https://docs.astral.sh/uv/getting-started/installation/) を参照。
 
-`poetry config virtualenvs.in-project true` で project の directory 内に .venv を作るようにしている。
-この設定は [poetry.toml](./poetry.toml) に commit してあるので clone した後に改めて実行する必要はない。
+使用する Python の version は [.python-version](./.python-version) で 3.14 に固定してあり、
+その version が手元になければ uv が自動で download する。
 
-依存 package の install は次のコマンドで行う。開発用 (pytest, ruff) も含めて install される。
+依存 package の install は次のコマンドで行う。project 内に `.venv` が作られ、
+開発用 (pytest, ruff) の package も含めて [uv.lock](./uv.lock) のとおりに install される。
 
 ```bash
-poetry install
+uv sync
 ```
 
-`--only main` を付けると application の実行に必要な package のみが install される (Dockerfile ではこちらを使用している)。
+`--no-dev` を付けると application の実行に必要な package のみが install される (Dockerfile ではこちらを使用している)。
+`--locked` を付けると lock file の更新が必要な状態のときに失敗する (CI ではこちらを使用している)。
+
+command の実行は `uv run` を使う。`.venv` を activate する必要はない。
+
+```bash
+uv run python manage.py migrate
+```
+
+package の追加や更新は次のようにする。
+
+```bash
+uv add 'some-package'          # 依存の追加
+uv add --dev 'some-package'    # 開発用依存の追加
+uv lock --upgrade              # lock file 内の package を最新に更新
+```
 
 psycopg2 は source から build されるため libpq の header (Debian/Ubuntu では `libpq-dev`) が必要になる。
 
@@ -100,19 +111,19 @@ psycopg2 は source から build されるため libpq の header (Debian/Ubuntu
 test は [pytest](https://docs.pytest.org/) + [pytest-django](https://pytest-django.readthedocs.io/) で実行する。
 
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
 coverage を見る場合は
 
 ```bash
-poetry run pytest --cov --cov-report=term-missing
+uv run pytest --cov --cov-report=term-missing
 ```
 
 Django 標準の test runner でも実行できる。
 
 ```bash
-DJANGO_SETTINGS_MODULE=mysite.settings_test poetry run python manage.py test
+DJANGO_SETTINGS_MODULE=mysite.settings_test uv run python manage.py test
 ```
 
 test では PostgreSQL の代わりに in-memory の SQLite を使う ([mysite/settings_test.py](./mysite/settings_test.py))。
@@ -129,10 +140,10 @@ DB server を用意しなくても test が実行できるようにするため�
 [pyproject.toml](./pyproject.toml) の `[tool.ruff]` にある。
 
 ```bash
-poetry run ruff check .          # lint
-poetry run ruff check --fix .    # lint (自動修正)
-poetry run ruff format .         # format
-poetry run ruff format --check . # format 確認のみ
+uv run ruff check .          # lint
+uv run ruff check --fix .    # lint (自動修正)
+uv run ruff format .         # format
+uv run ruff format --check . # format 確認のみ
 ```
 
 lint と test は [.github/workflows/python.yaml](./.github/workflows/python.yaml) で
@@ -144,7 +155,7 @@ pull request と main への push の際に実行される。
 事情により daphne が使用されているので
 
 ```
-poetry run python -m daphne -b 0.0.0.0 -p 8000 mysite.asgi:application
+uv run python -m daphne -b 0.0.0.0 -p 8000 mysite.asgi:application
 ```
 
 asgi なので [opentelemetry-instrumentation-asgi](https://pypi.org/project/opentelemetry-instrumentation-asgi/) が必要。

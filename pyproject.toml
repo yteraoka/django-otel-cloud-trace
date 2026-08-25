@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Django tutorial app instrumented with OpenTelemetry for Cloud Trace"
 authors = [{ name = "Yoshinori Teraoka", email = "teraoka@3-shake.com" }]
 readme = "README.md"
-requires-python = ">=3.12,<4.0"
+requires-python = ">=3.14,<4.0"
 dependencies = [
     "django (>=6.1,<7.0)",
     "opentelemetry-instrumentation-django (>=0.65b0,<0.66)",
@@ -19,16 +19,16 @@ dependencies = [
     "opentelemetry-resourcedetector-gcp (>=1.14.0,<2.0.0)",
 ]
 
-[tool.poetry]
-# This project is an application, not a library: nothing is built or installed
-# from the project directory itself.
-package-mode = false
+# [build-system] is intentionally absent: this is an application, not a library,
+# so uv treats it as a virtual project and does not install it into the venv.
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^9.1.1"
-pytest-django = "^4.14.0"
-pytest-cov = "^7.1.0"
-ruff = "^0.16.4"
+[dependency-groups]
+dev = [
+    "pytest (>=9.1.1,<10.0.0)",
+    "pytest-django (>=4.14.0,<5.0.0)",
+    "pytest-cov (>=7.1.0,<8.0.0)",
+    "ruff (>=0.16.4,<0.17.0)",
+]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "mysite.settings_test"
@@ -41,7 +41,7 @@ omit = ["*/migrations/*", "*/tests/*", "*/tests.py", "mysite/settings_test.py"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py314"
 extend-exclude = ["polls/migrations"]
 
 [tool.ruff.lint]

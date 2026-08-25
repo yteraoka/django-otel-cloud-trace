@@ -1,4 +1,6 @@
-FROM python:3.13.15 AS builder
+FROM python:3.14.7 AS builder
+
+COPY --from=ghcr.io/astral-sh/uv:0.12.5 /uv /usr/local/bin/uv
 
 RUN apt-get update \
  && apt-get upgrade -y \
@@ -10,20 +12,20 @@ ENV PYTHONUNBUFFERED=1
 # Don't create `.pyc` files
 ENV PYTHONDONTWRITEBYTECODE=1
 
-ENV POETRY_HOME /etc/poetry
-ENV POETRY_VERSION 2.4.1
+# Create the virtualenv at /code/.venv and use the interpreter of the base image
+# (psycopg2 is built from source, the header files are in this image already)
+ENV UV_PROJECT_ENVIRONMENT=/code/.venv
+ENV UV_PYTHON_DOWNLOADS=never
+ENV UV_LINK_MODE=copy
 
 WORKDIR /code
 
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml uv.lock .python-version ./
 
-RUN curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VERSION \
- && chmod +x $POETRY_HOME/bin/poetry \
- && $POETRY_HOME/bin/poetry config virtualenvs.in-project true \
- && $POETRY_HOME/bin/poetry install --only main --no-root --no-interaction --no-ansi
+RUN uv sync --locked --no-dev
 
 
-FROM python:3.13.15-slim
+FROM python:3.14.7-slim
 
 RUN apt-get update \
  && apt-get upgrade -y \
@@ -37,7 +39,7 @@ USER app
 COPY --from=builder /code/.venv /code/.venv
 
 WORKDIR /code
-ENV PORT 8000
+ENV PORT=8000
 COPY . ./
 
 CMD /code/.venv/bin/python -m daphne -b 0.0.0.0 -p $PORT mysite.asgi:application
