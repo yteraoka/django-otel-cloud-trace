@@ -1,4 +1,4 @@
-FROM python:3.13.15 AS builder
+FROM python:3.14.7 AS builder
 
 RUN apt-get update \
  && apt-get upgrade -y \
@@ -23,7 +23,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VE
  && $POETRY_HOME/bin/poetry install --only main --no-root --no-interaction --no-ansi
 
 
-FROM python:3.13.15-slim
+FROM python:3.14.7-slim
 
 RUN apt-get update \
  && apt-get upgrade -y \
