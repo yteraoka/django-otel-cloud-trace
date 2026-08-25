@@ -1,8 +1,8 @@
 # Django tutorial app に OpenTelemetry の Tracing を導入する
 
-https://docs.djangoproject.com/en/4.1/intro/
+https://docs.djangoproject.com/en/6.1/intro/
 
-[devbox](https://www.jetpack.io/devbox/docs/) の Python 3.10, PostgreSQL を使っている。
+[devbox](https://www.jetpack.io/devbox/docs/) の Python 3.13, PostgreSQL を使っている。
 
 Cloud Run で実行し、Cloud Trace に送ることを前提としている。
 
@@ -24,17 +24,26 @@ PostgreSQL を起動させるには次のコマンドを実行する
 devbox services start
 ```
 
+よく使う操作は devbox script にしてあるので `devbox run <script>` でも実行できる。
+
+```bash
+devbox run install  # poetry install
+devbox run test     # pytest
+devbox run lint     # ruff check
+devbox run format   # ruff format
+```
+
 Django で PostgreSQL サーバーの情報設定に `~/.pg_service.conf` (`PGSERVICEFILE`) を使用する場合は
 
 settings.py で次のように指定して
 
 ```python
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'OPTIONS': {
-            'service': 'my_service',
-        }
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "OPTIONS": {
+            "service": "my_service",
+        },
     }
 }
 ```
@@ -73,6 +82,61 @@ https://signoz.io/docs/instrumentation/django/#postgres-database-instrumentation
 package 管理には [poetry](https://python-poetry.org/) を使用している。poetry 自体は devbox でインストールしている。
 
 `poetry config virtualenvs.in-project true` で project の directory 内に .venv を作るようにしている。
+この設定は [poetry.toml](./poetry.toml) に commit してあるので clone した後に改めて実行する必要はない。
+
+依存 package の install は次のコマンドで行う。開発用 (pytest, ruff) も含めて install される。
+
+```bash
+poetry install
+```
+
+`--only main` を付けると application の実行に必要な package のみが install される (Dockerfile ではこちらを使用している)。
+
+psycopg2 は source から build されるため libpq の header (Debian/Ubuntu では `libpq-dev`) が必要になる。
+
+
+## Test
+
+test は [pytest](https://docs.pytest.org/) + [pytest-django](https://pytest-django.readthedocs.io/) で実行する。
+
+```bash
+poetry run pytest
+```
+
+coverage を見る場合は
+
+```bash
+poetry run pytest --cov --cov-report=term-missing
+```
+
+Django 標準の test runner でも実行できる。
+
+```bash
+DJANGO_SETTINGS_MODULE=mysite.settings_test poetry run python manage.py test
+```
+
+test では PostgreSQL の代わりに in-memory の SQLite を使う ([mysite/settings_test.py](./mysite/settings_test.py))。
+DB server を用意しなくても test が実行できるようにするためで、pytest は
+[pyproject.toml](./pyproject.toml) の `DJANGO_SETTINGS_MODULE` でこの設定 module を読み込む。
+
+外部への HTTP request (`https://httpbin.org/delay/2`) や `time.sleep()` は trace を分かりやすく
+するために view に入れてあるものなので、test では mock している。
+
+
+## Lint, Format
+
+[ruff](https://docs.astral.sh/ruff/) を linter 兼 formatter として使用している。設定は
+[pyproject.toml](./pyproject.toml) の `[tool.ruff]` にある。
+
+```bash
+poetry run ruff check .          # lint
+poetry run ruff check --fix .    # lint (自動修正)
+poetry run ruff format .         # format
+poetry run ruff format --check . # format 確認のみ
+```
+
+lint と test は [.github/workflows/python.yaml](./.github/workflows/python.yaml) で
+pull request と main への push の際に実行される。
 
 
 ## daphne を使って実行
