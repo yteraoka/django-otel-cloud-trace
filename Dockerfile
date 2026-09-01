@@ -1,6 +1,6 @@
 FROM python:3.14.7 AS builder
 
-COPY --from=ghcr.io/astral-sh/uv:0.12.5 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.12.9 /uv /usr/local/bin/uv
 
 RUN apt-get update \
  && apt-get upgrade -y \
