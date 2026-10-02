@@ -1,4 +1,4 @@
-FROM python:3.14.7 AS builder
+FROM python:3.14.8 AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:0.12.17 /uv /usr/local/bin/uv
 
@@ -25,7 +25,7 @@ COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --locked --no-dev
 
 
-FROM python:3.14.7-slim
+FROM python:3.14.8-slim
 
 # application は /code/.venv から実行するので pip は不要。
 # pip が vendoring している library (msgpack, setuptools) の脆弱性が
